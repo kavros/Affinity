@@ -1,0 +1,1 @@
+icc -O3 -qopenmp -std=c99 -g loops2.c -o build/bin/loops2
