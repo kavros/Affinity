@@ -135,23 +135,25 @@ void runloop(int loopid)  {
         int lo = myid*ipt;
         int hi = (myid+1)*ipt;
         if (hi > N) hi = N; 
+        
         AllocateArray();
         InitArray();
         
         chunk nextChunk;
-        GetNextChunk3(myid,&nextChunk);
         
-        while(nextChunk.start != hi )
+        
+        while(true )
         {
+            GetNextChunk3(myid,&nextChunk);
+            if(nextChunk.start == hi) break;
+            
             switch (loopid) 
             { 
                 case 1: loop1chunk(nextChunk.start,nextChunk.end); break;
                 case 2: loop2chunk(nextChunk.start,nextChunk.end); break;
             }
-            GetNextChunk3(myid,&nextChunk);
-            
-            
         }
+        
         StealChunks(loopid);
     }
     
