@@ -5,9 +5,10 @@
 
 #define N 729
 //#define reps 1000
-#define reps 1
+#define reps 1000
 #include <omp.h> 
 #include <assert.h>
+
 
 
 double a[N][N], b[N][N], c[N];
@@ -22,13 +23,30 @@ void loop2chunk(int, int);
 void valid1(void);
 void valid2(void);
 
-typedef struct localSet{
-    int r;
+typedef struct localSet
+{
+    int lo;
+    int hi;
 }localSet;
+
 localSet* array;
 bool isArrayAlocated;
 
+typedef struct chunk
+{
+    int start;
+    int end;
+}chunk;
+
 omp_lock_t lock;
+//chunk nextChunk;
+
+void GetNextChunk3(int threadId,chunk* nextChunk);
+void InitArray();
+void StealChunks(int loopid);
+void AllocateArray();
+void RunChunk(int loopid, chunk nextChunk);
+void GetStolenChunk(chunk* stolenChunk);
 
 
 
@@ -37,6 +55,7 @@ int main(int argc, char *argv[]) {
     double start1,start2,end1,end2;
     int r;
 
+    
     init1(); 
 
     isArrayAlocated = false;
@@ -68,7 +87,7 @@ int main(int argc, char *argv[]) {
     valid2(); 
 
     printf("Total time for %d reps of loop 2 = %f\n",reps, (float)(end2-start2)); 
-
+    
 } 
 
 void init1(void){
@@ -117,74 +136,118 @@ void runloop(int loopid)  {
         int hi = (myid+1)*ipt;
         if (hi > N) hi = N; 
         AllocateArray();
+        InitArray();
         
-        //initialize every thread with N/nThreads remaining iterations.
-        InitArray(myid);
+        chunk nextChunk;
+        GetNextChunk3(myid,&nextChunk);
         
-        
-        int l = (N/nthreads);;
-        int chunkSize = l/nthreads;
-        
-        int start=lo;
-        int end = start+chunkSize;
-        while(array[myid].r != 0  )
+        while(nextChunk.start != hi )
         {
-            
-            array[myid].r = array[myid].r-chunkSize;            
-            //printf("thread=id %d  (%d,%d) , c=%d, r=%d \n",myid,start,end,array[myid].c,array[myid].r);
             switch (loopid) 
             { 
-                case 1: loop1chunk(start,end); break;
-                case 2: loop2chunk(start,end); break;
+                case 1: loop1chunk(nextChunk.start,nextChunk.end); break;
+                case 2: loop2chunk(nextChunk.start,nextChunk.end); break;
             }
-
-            //calculate next start and end using chunk size.
-            chunkSize = array[myid].r/nthreads; 
-            if(chunkSize ==0 )
-            {
-                
-                chunkSize = 1;
-                
-            }
-            start = end;
-            end = end+chunkSize ;            
+            GetNextChunk3(myid,&nextChunk);
+            
+            
         }
-        StealChunk();
-/*
-        switch (loopid) { 
-                case 1: loop1chunk(lo,hi); break;
-                case 2: loop2chunk(lo,hi); break;
-        } 
+        StealChunks(loopid);
+    }
+    
+    
 
-*/
+}
 
+void GetStolenChunk(chunk* stolenChunk)
+{
+    
+    int nthreads = omp_get_num_threads(); 
+    int maxRemainingIterations =-1;
+    int targetThread = -1;    
+    int remainingIterations = -1;
+    
+    
+    stolenChunk->start = -1;
+    stolenChunk->end = -1;
+    
+    
+    
+    omp_set_lock(&lock);
+    for(int i=0; i < nthreads; i++ )
+    {
+        remainingIterations = array[i].hi-array[i].lo;
+        
+        if(remainingIterations > maxRemainingIterations)
+        {
+            maxRemainingIterations=remainingIterations;
+            targetThread =i;
+        }
+    }
+    if(maxRemainingIterations  > 0)
+    {
+        int chunkSize = (array[targetThread].hi-array[targetThread].lo)/nthreads;
+        if(chunkSize == 0) chunkSize=1;
+        stolenChunk->start = array[targetThread].lo;
+        stolenChunk->end = stolenChunk->start +chunkSize;
+        array[targetThread].lo = stolenChunk->end ;
+    }
+    omp_unset_lock(&lock);
+            
+    
+}
+
+void RunChunk(int loopid, chunk nextChunk)
+{
+     switch (loopid) 
+    { 
+        case 1: loop1chunk(nextChunk.start,nextChunk.end); break;
+        case 2: loop2chunk(nextChunk.start,nextChunk.end); break;
     }
 }
 
-void StealChunk()
+void StealChunks(int loopid)
 {
-    printf("thread %d try to steal from ",omp_get_thread_num());
-    int nthreads = omp_get_num_threads(); 
-    int maxRemaining =-1;
-    int targetThreadId=-1;
-    for(int i=0; i < nthreads; i++ )
+    chunk stolenChunk;
+    
+    while(true)
     {
-        if(array[i].r > maxRemaining )
+        GetStolenChunk(&stolenChunk);
+        if(stolenChunk.start == -1)
         {
-            maxRemaining = array[i].r ;
-            targetThreadId = i ;
-        } 
-    }
-    if(maxRemaining != 0)
-    {
-        printf("thread  = %d which have remaining iters = %d \n",targetThreadId,maxRemaining);
-    }
-    else
-    {
-        printf("\n");
+            break;
+        }
+        RunChunk(loopid,stolenChunk);
     }
     
 }
+
+void GetNextChunk3(int myid,chunk* nextChunk)
+{
+
+    int nthreads = omp_get_num_threads(); 
+    
+    int start=-1;
+    int chunkSize = -1;
+    
+    omp_set_lock(&lock);
+    
+    start =  array[myid].lo ;
+    chunkSize = (array[myid].hi-array[myid].lo)/nthreads;
+    if(chunkSize == 0) chunkSize=1;
+    array[myid].lo = array[myid].lo + chunkSize;        
+    
+    omp_unset_lock(&lock);
+    
+    
+    
+    nextChunk->start = start;
+    nextChunk->end = start+chunkSize;
+    //printf("myid %d chunkSize  = %d lo = %d hi=%d \n ",myid,chunkSize,nextChunk->start,nextChunk->end);
+    
+    
+}
+
 
 void AllocateArray()
 {
@@ -200,14 +263,19 @@ void AllocateArray()
     
     
 }
-void InitArray(int threadId)
+void InitArray()
 {
+    int myid  = omp_get_thread_num();
     int nthreads = omp_get_num_threads(); 
+    int ipt = (int) ceil((double)N/(double)nthreads); 
+    int lo = myid*ipt;
+    int hi = (myid+1)*ipt;
+    if (hi > N) hi = N; 
     
-    int l = N/nthreads;
-    array[threadId].r = l;
     
-    //printf("thread id %d  l=%d  c=%d r =%d \n",threadId,array[threadId].l,array[threadId].c,array[threadId].r);
+    array[myid].lo = lo;
+    array[myid].hi = hi;
+    
 }
 
 
