@@ -32,6 +32,7 @@ typedef struct localSet
 
 localSet* array;
 bool isArrayAlocated;
+bool isArrayInitialized;
 
 typedef struct chunk
 {
@@ -40,6 +41,7 @@ typedef struct chunk
 }chunk;
 
 omp_lock_t allocationLock;
+omp_lock_t initializationLock;
 //chunk nextChunk;
 
 void GetNextChunk(int threadId,chunk* nextChunk);
@@ -61,15 +63,18 @@ int main(int argc, char *argv[]) {
 
     isArrayAlocated = false;
     omp_init_lock(&allocationLock);
-
+    isArrayInitialized =false;
+    omp_init_lock(&initializationLock);
+    
     start1 = omp_get_wtime(); 
 
     for (r=0; r<reps; r++){ 
-            runloop(1);
+        runloop(1);
+        isArrayInitialized =false;
     } 
-
+    
     end1  = omp_get_wtime();  
-
+    
     valid1(); 
 
     printf("Total time for %d reps of loop 1 = %f\n",reps, (float)(end1-start1)); 
@@ -80,7 +85,8 @@ int main(int argc, char *argv[]) {
     start2 = omp_get_wtime(); 
 
     for (r=0; r<reps; r++){ 
-            runloop(2);
+        isArrayInitialized =false;
+        runloop(2);
     } 
 
     end2  = omp_get_wtime(); 
@@ -88,7 +94,7 @@ int main(int argc, char *argv[]) {
     valid2(); 
 
     printf("Total time for %d reps of loop 2 = %f\n",reps, (float)(end2-start2)); 
-    
+    free(array);
 } 
 
 void init1(void){
@@ -128,7 +134,7 @@ void init2(void){
 
 void runloop(int loopid)  {
 
-#pragma omp parallel default(none) shared(loopid,isArrayAlocated,array) 
+#pragma omp parallel default(none) shared(loopid,isArrayAlocated,isArrayInitialized,array) 
     {
         int myid  = omp_get_thread_num();
         int nthreads = omp_get_num_threads(); 
@@ -180,7 +186,7 @@ void GetStolenChunk(chunk* stolenChunk)
     for(int i=0; i < nthreads; i++ )
     {
         omp_set_lock(&(array[i].lock));
-        //printf("thread %d acquires lock of thread %d\n",omp_get_thread_num(),i);
+//        printf("thread %d acquires lock of thread %d\n",omp_get_thread_num(),i);
         remainingIterations = array[i].hi-array[i].lo;
         
         
@@ -189,7 +195,7 @@ void GetStolenChunk(chunk* stolenChunk)
             if(targetThread != -1)
             {
                 omp_unset_lock(&(array[targetThread].lock));
-                //printf("thread %d release lock of thread %d\n",omp_get_thread_num(),targetThread);
+//                printf("thread %d release lock of thread %d\n",omp_get_thread_num(),targetThread);
             }
             maxRemainingIterations=remainingIterations;
             targetThread =i;
@@ -197,12 +203,12 @@ void GetStolenChunk(chunk* stolenChunk)
         else
         {
             omp_unset_lock(&(array[i].lock));
-            //printf("thread %d release lock of thread %d\n",omp_get_thread_num(),i);
+//            printf("thread %d release lock of thread %d\n",omp_get_thread_num(),i);
         }
     }
     if(maxRemainingIterations  > 0)
     {
-        //printf("thread %d  steal chunk from thread %d which has %d \n",omp_get_thread_num(),targetThread,maxRemainingIterations);
+ //       printf("thread %d  steal chunk from thread %d which has %d \n",omp_get_thread_num(),targetThread,maxRemainingIterations);
         
         int chunkSize = (array[targetThread].hi-array[targetThread].lo)/nthreads;
         if(chunkSize == 0) chunkSize=1;
@@ -211,7 +217,7 @@ void GetStolenChunk(chunk* stolenChunk)
         array[targetThread].lo = stolenChunk->end ;
         
         omp_unset_lock(&(array[targetThread].lock));
-        //printf("thread %d release lock of thread %d\n",omp_get_thread_num(),targetThread);
+//        printf("thread %d release lock of thread %d\n",omp_get_thread_num(),targetThread);
     }
     else if(maxRemainingIterations == 0)
     {
@@ -281,27 +287,52 @@ void AllocateArray()
     omp_set_lock(&allocationLock);
     if(isArrayAlocated == false)
     {
-        array =(localSet*) malloc(nthreads * sizeof(localSet));
         isArrayAlocated = true;
-        //printf("Allocation step\n");
+        array =(localSet*) malloc(nthreads * sizeof(localSet));
+        //printf("Allocation an array of size %d\n",nthreads);
+        for(int i=0; i < nthreads;i++)
+        {
+            omp_init_lock(&(array[i].lock));
+        }
     }
+    
     omp_unset_lock(&allocationLock);
     
     
 }
 void InitArray()
 {
+    
     int myid  = omp_get_thread_num();
     int nthreads = omp_get_num_threads(); 
     int ipt = (int) ceil((double)N/(double)nthreads); 
-    int lo = myid*ipt;
-    int hi = (myid+1)*ipt;
-    if (hi > N) hi = N; 
+    
+    omp_set_lock(&initializationLock);
+    
+    if(isArrayInitialized  == false)
+    {
+        isArrayInitialized = true;
+        for(int i = 0; i < nthreads; i++)
+        {
+            int lo = i*ipt;
+            int hi = (i+1)*ipt;
+            if (hi > N) hi = N; 
+            //printf("myid %d lo %d hi %d\n",myid,lo,hi);
+            array[i].lo = lo;
+            array[i].hi = hi;
+        }
+    }
+    omp_unset_lock(&initializationLock);
+    
+    /*  
+ * 
+ *   
     omp_init_lock(&(array[myid].lock));
     
     array[myid].lo = lo;
     array[myid].hi = hi;
-    
+    printf("thread %d init\n",myid);
+ */ 
 }
 
 
