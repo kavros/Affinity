@@ -1,1 +1,1 @@
-export OMP_NUM_THREADS=3
+export OMP_NUM_THREADS=4
