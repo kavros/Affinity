@@ -53,7 +53,7 @@ def GetAxis(dictionary):
 		yAxisContent.append(dictionary[key])
 	return xAxisContent,yAxisContent
 
-def GenerateLineChart(dict1,dict2,schedule1_type,schedule2_type):
+def GenerateLineChart(dict1,dict2,schedule1_type,schedule2_type,fileName):
 	x1,y1 = GetAxis(dict1)
 	x2,y2 = GetAxis(dict2)
 
@@ -63,16 +63,17 @@ def GenerateLineChart(dict1,dict2,schedule1_type,schedule2_type):
 	ax.set(xlabel="number of threads", ylabel="total time in secs")	
 	ax.grid()
 	plt.legend([schedule1_type, schedule2_type], loc=1)
-	plt.show()
-	#plt.savefig(filePath, format='eps', dpi=1200)
+	#plt.show()
+	path="../results/graphs/"
+	plt.savefig((path+fileName), format='eps', dpi=1000)
 	
 	
 		
 
 def main():
 	Init()	
-	GenerateLineChart(affinityLoop1,guidedLoop1,"affinity","guided,1")
-	GenerateLineChart(affinityLoop1,dynamicLoop2,"affinity","dynamic,16")
+	GenerateLineChart(affinityLoop1,guidedLoop1,"affinity","guided,1","loop1.eps")
+	GenerateLineChart(affinityLoop1,dynamicLoop2,"affinity","dynamic,16","loop2.eps")
 	
 
 if __name__ == "__main__":
