@@ -41,7 +41,7 @@ typedef struct chunk
 omp_lock_t lock;
 //chunk nextChunk;
 
-void GetNextChunk3(int threadId,chunk* nextChunk);
+void GetNextChunk(int threadId,chunk* nextChunk);
 void InitArray();
 void StealChunks(int loopid);
 void AllocateArray();
@@ -144,7 +144,7 @@ void runloop(int loopid)  {
         
         while(true )
         {
-            GetNextChunk3(myid,&nextChunk);
+            GetNextChunk(myid,&nextChunk);
             if(nextChunk.start == hi) break;
             
             switch (loopid) 
@@ -224,7 +224,7 @@ void StealChunks(int loopid)
     
 }
 
-void GetNextChunk3(int myid,chunk* nextChunk)
+void GetNextChunk(int myid,chunk* nextChunk)
 {
 
     int nthreads = omp_get_num_threads(); 
