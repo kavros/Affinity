@@ -4,11 +4,12 @@ LIB = -lm
 .PHONY: all
 all:	build/bin/loops2
 	
+	
 
-build/bin/loops2: src/loops2.c 
+build/bin/loops2: src/loops2.c build/affinity.o
 	$(CC) $^ -o $@
 
-build/queue.o: src/queue.c include/queue.h
+build/affinity.o: src/affinity.c include/affinity.h
 	$(CC) -c $< -o $@
 	
 
