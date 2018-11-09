@@ -1,7 +1,8 @@
 #!/bin/bash --login
 #
 #PBS -N loops
-#PBS -l select=72
+#PBS -l select=1:ncpus=36
+#PBS -l place=scatter:excl
 #PBS -l walltime=0:10:0
 #PBS -A d167-s1891388
 cd $PBS_O_WORKDIR
