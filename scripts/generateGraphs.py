@@ -73,7 +73,7 @@ def GenerateLineChart(dict1,dict2,schedule1_type,schedule2_type,fileName):
 def main():
 	Init()	
 	GenerateLineChart(affinityLoop1,guidedLoop1,"affinity","guided,1","loop1.eps")
-	GenerateLineChart(affinityLoop1,dynamicLoop2,"affinity","dynamic,16","loop2.eps")
+	GenerateLineChart(affinityLoop2,dynamicLoop2,"affinity","dynamic,16","loop2.eps")
 	
 
 if __name__ == "__main__":
