@@ -1,23 +1,23 @@
 # Build and Run
 * Build project using ```make```
-* Run project on fronted of cirrus using:
+* Run project on fronted of cirrus using the following commands:
  ```
 export OMP_NUM_THREADS=4
 make run
  ```
-* Run on the backend of Cirrus using:
+* Run on the backend of Cirrus and validate the results using the following commands:
  ```
  cd scripts
 ./run.sh
+python validation.py
  ```
-* The results are in folder results/affinity
+* The results are saved inside folder results/affinity
 
 # Generate Graphs
 * Run the following commands to generate 
-
  ```
 cd scripts
 python generateGraphs.py
 
  ```
-* The results are in folder results/graphs
+* The graphs are saved inside folder results/graphs

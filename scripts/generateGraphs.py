@@ -56,26 +56,62 @@ def GetAxis(dictionary):
 def GenerateLineChart(dict1,dict2,schedule1_type,schedule2_type,fileName):
 	x1,y1 = GetAxis(dict1)
 	x2,y2 = GetAxis(dict2)
-
 	fig, ax = plt.subplots()
+	addExpectedSpeedup(fileName,plt,dict1)	
 	plt.plot(x1,y1,marker="x")
 	plt.plot(x2,y2,marker="x")
 	ax.set(xlabel="number of threads", ylabel="total time in secs")	
 	ax.grid()
-	plt.legend([schedule1_type, schedule2_type], loc=1)
+	if("speedup" not in fileName):
+		plt.legend([schedule1_type, schedule2_type], loc=1)
+	else:
+		plt.legend(["ideal",schedule1_type, schedule2_type], loc=2)
 	#plt.show()
 	path="../results/graphs/"
 	plt.savefig((path+fileName), format='eps', dpi=1000)
-	
-	
-		
+
+
+def GetSpeedup(target,src):
+	for key in src.keys():
+		target[key] = src[1]/src[key]
+
+
+
+def addExpectedSpeedup(fileName,plt,dict1):
+	if("speedup" not in fileName):
+		return
+	print fileName
+	expectedSpeedup=dict()
+	for key in dict1.keys():
+		expectedSpeedup[key] = key
+	x3,y3 = GetAxis(expectedSpeedup)
+	plt.plot(x3,y3,marker="x")
+
 
 def main():
 	Init()	
 	GenerateLineChart(affinityLoop1,guidedLoop1,"affinity","guided,1","loop1.eps")
-	GenerateLineChart(affinityLoop1,dynamicLoop2,"affinity","dynamic,16","loop2.eps")
+	GenerateLineChart(affinityLoop2,dynamicLoop2,"affinity","dynamic,16","loop2.eps")
 	
+	affinityLoop1Speedup=dict()
+	affinityLoop2Speedup=dict()
+	guidedLoop1Speedup=dict()
+	dynamicLoop2Speedup=dict()
 
+
+
+	GetSpeedup(affinityLoop1Speedup,affinityLoop1)
+	GetSpeedup(affinityLoop2Speedup,affinityLoop2)
+	GetSpeedup(guidedLoop1Speedup,guidedLoop1)
+	GetSpeedup(dynamicLoop2Speedup,dynamicLoop2)
+
+	GenerateLineChart(affinityLoop1Speedup,guidedLoop1Speedup,"affinity","guided,1","loop1_speedup.eps")
+	GenerateLineChart(affinityLoop2Speedup,dynamicLoop2Speedup,"affinity","dynamic,16","loop2_speedup.eps")
+
+	print affinityLoop1Speedup
+	print guidedLoop1Speedup
+
+	
 if __name__ == "__main__":
 	main()
 
