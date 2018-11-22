@@ -1,4 +1,4 @@
-CC= icc -O3 -qopenmp -std=c99 -g
+CC= icc -Wall -O3 -qopenmp -std=c99 -g
 LIB = -lm
 
 .PHONY: all
@@ -6,7 +6,7 @@ all:	build/bin/loops2
 	
 	
 
-build/bin/loops2: src/loops2.c build/affinity.o
+build/bin/loops2: src/loops2.c build/affinity.o include/loops2.h
 	$(CC) $^ -o $@
 
 build/affinity.o: src/affinity.c include/affinity.h
@@ -20,4 +20,4 @@ run:
 .PHONY: clean
 clean:
 	rm build/bin/loops2 
-	rm build/queue.o
+	rm build/*.o
