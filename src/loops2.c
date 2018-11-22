@@ -25,7 +25,9 @@ int main(int argc, char *argv[]) {
     
     for (r=0; r<reps; r++){ 
         runloop(1);
-        isArrayInitialized =false;
+        isArrayInitialized =false;                  // we need to initialize the 
+                                                    // array with the local sets
+                                                    // in every new repetition
     } 
     
     end1  = omp_get_wtime();  
@@ -40,7 +42,9 @@ int main(int argc, char *argv[]) {
     start2 = omp_get_wtime(); 
     
     for (r=0; r<reps; r++){ 
-        isArrayInitialized =false;
+        isArrayInitialized =false;                  // we need to initialize the 
+                                                    // array with the local sets
+                                                    // in every new repetition
         runloop(2);
     } 
     
@@ -87,28 +91,32 @@ void init2(void){
 } 
 
 
-void runloop(int loopid)  {
+void runloop(int loopid)  
+{
     
 #pragma omp parallel default(none) shared(loopid,isArrayAlocated,isArrayInitialized,array) 
     {
         int myid  = omp_get_thread_num();
         int nthreads = omp_get_num_threads(); 
         int ipt = (int) ceil((double)N/(double)nthreads); 
-        int lo = myid*ipt;
         int hi = (myid+1)*ipt;
         if (hi > N) hi = N; 
         
-        AllocateArray();
-        InitArray();
+        AllocateArray();                       // The first thread which calls 
+                                               // this function, it will allocate
+                                               // the array with the local sets.
+        
+        InitArray();                           // The first thread which calls 
+                                               // this function, it will initialize
+                                               // the array with the local sets.
         
         chunk nextChunk;
-        
-        
         while(true )
         {
             GetNextChunk(myid,&nextChunk);
-            if(nextChunk.start == hi) break;
-            
+            if(nextChunk.start == hi) break;    // exit loop if there are 
+                                                // no more iterations 
+                                                // left in its local set 
             switch (loopid) 
             { 
                 case 1: loop1chunk(nextChunk.start,nextChunk.end); break;
@@ -116,11 +124,11 @@ void runloop(int loopid)  {
             }
         }
         
-        StealChunks(loopid);
+        StealChunks(loopid);                    // threads which has finished with
+                                                // their own local set tries to steal
+                                                // chunks until threads are no more
+                                                // iterations.
     }
-    
-    
-    
 }
 
 
