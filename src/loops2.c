@@ -126,7 +126,7 @@ void runloop(int loopid)
         
         StealChunks(loopid);                    // threads which has finished with
                                                 // their own local set tries to steal
-                                                // chunks until threads are no more
+                                                // chunks until there are no more
                                                 // iterations.
     }
 }
