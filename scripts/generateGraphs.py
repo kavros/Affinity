@@ -9,6 +9,8 @@ affinityLoop2=dict()
 guidedLoop1=dict()
 dynamicLoop2=dict()
 
+# calculates the average time for loop 1 and loop 2 using the files
+# that qsub produce
 def GetAverageTime(lines,target):
 	sumT=0.0;
 	cnt=0;
@@ -20,6 +22,7 @@ def GetAverageTime(lines,target):
 	averageTime =  sumT/cnt
 	return averageTime
 
+# read a log files and initialize dictionaries
 def Init():
 	path = "../results/affinity/"
 	for fileName in os.listdir(path):
@@ -53,6 +56,7 @@ def GetAxis(dictionary):
 		yAxisContent.append(dictionary[key])
 	return xAxisContent,yAxisContent
 
+# generate speedup and total time graphs
 def GenerateLineChart(dict1,dict2,schedule1_type,schedule2_type,fileName):
 	x1,y1 = GetAxis(dict1)
 	x2,y2 = GetAxis(dict2)
@@ -70,13 +74,13 @@ def GenerateLineChart(dict1,dict2,schedule1_type,schedule2_type,fileName):
 	path="../results/graphs/"
 	plt.savefig((path+fileName), format='eps', dpi=1000)
 
-
+# helper function for calculation of speedup.
 def GetSpeedup(target,src):
 	for key in src.keys():
 		target[key] = src[1]/src[key]
 
 
-
+# adds expected speedip to speedup graph
 def addExpectedSpeedup(fileName,plt,dict1):
 	if("speedup" not in fileName):
 		return
@@ -89,7 +93,10 @@ def addExpectedSpeedup(fileName,plt,dict1):
 
 
 def main():
+	# initalize dictionaries with total time
 	Init()	
+
+	# generate total time line charts
 	GenerateLineChart(affinityLoop1,guidedLoop1,"affinity","guided,1","loop1.eps")
 	GenerateLineChart(affinityLoop2,dynamicLoop2,"affinity","dynamic,16","loop2.eps")
 	
@@ -99,12 +106,13 @@ def main():
 	dynamicLoop2Speedup=dict()
 
 
-
+	# initialize dictionaries with speedup
 	GetSpeedup(affinityLoop1Speedup,affinityLoop1)
 	GetSpeedup(affinityLoop2Speedup,affinityLoop2)
 	GetSpeedup(guidedLoop1Speedup,guidedLoop1)
 	GetSpeedup(dynamicLoop2Speedup,dynamicLoop2)
 
+	# generate speedup line charts for speedup
 	GenerateLineChart(affinityLoop1Speedup,guidedLoop1Speedup,"affinity","guided,1","loop1_speedup.eps")
 	GenerateLineChart(affinityLoop2Speedup,dynamicLoop2Speedup,"affinity","dynamic,16","loop2_speedup.eps")
 
