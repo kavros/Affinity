@@ -1,4 +1,4 @@
-
+//B145772
 #ifndef AFFINITY_H
 #define AFFINITY_H
 #include <omp.h> 

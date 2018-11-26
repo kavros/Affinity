@@ -1,3 +1,4 @@
+//B145772
 #!/bin/bash
 AFFINITY_EXE=../build/bin/loops2
 AFFINITY_OUTPUT_FOLDER=../results/affinity
