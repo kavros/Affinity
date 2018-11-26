@@ -38,11 +38,6 @@ omp_lock_t allocationLock;      // Every thread try to initialize the array with
                                 // the localSets but only the first that acquires
                                 // the lock is doing the initialization.
 
-bool isArrayInitialized;        // shared variable between that we use to initialize 
-                                // for the initialization of the array with localSets.
-
-omp_lock_t initializationLock;  // lock in order to initialize array once in each iteration
-
 
 /**
  * Returns the next chunk of the thread.

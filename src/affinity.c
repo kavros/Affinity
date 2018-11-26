@@ -168,15 +168,11 @@ void AllocateArray()
 }
 void InitArray()
 {    
-    omp_set_lock(&initializationLock);                 // lock to prevent other threads
-                                                       // go in this section of code
-                                                       // while the initialization is in progress
-    
-    
-    if(isArrayInitialized  == false)                    // only the first thread 
-                                                        // which acquires the lock
-                                                        // allocate the array
-        
+  
+    #pragma omp single                                      //  in  this section we
+                                                            // run the initialization
+                                                            // of the data structure
+                                                            // only from one thread
     {
         int nthreads = omp_get_num_threads(); 
         int ipt = (int) ceil((double)N/(double)nthreads); 
@@ -185,15 +181,11 @@ void InitArray()
             int lo = i*ipt;
             int hi = (i+1)*ipt;
             if (hi > N) hi = N; 
-            //int myid  = omp_get_thread_num();
-            //printf("myid %d lo %d hi %d\n",myid,lo,hi);
             array[i].lo = lo;
             array[i].hi = hi;
         }
-        isArrayInitialized = true;
+  
     }
-    
-    omp_unset_lock(&initializationLock);
 
 }
 

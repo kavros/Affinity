@@ -18,16 +18,12 @@ int main(int argc, char *argv[]) {
     
     isArrayAlocated = false;
     omp_init_lock(&allocationLock);
-    isArrayInitialized =false;
-    omp_init_lock(&initializationLock);
     
     start1 = omp_get_wtime(); 
     
     for (r=0; r<reps; r++){ 
         runloop(1);
-        isArrayInitialized =false;                  // we need to initialize the 
-                                                    // array with the local sets
-                                                    // in every new repetition
+        
     } 
     
     end1  = omp_get_wtime();  
@@ -42,9 +38,6 @@ int main(int argc, char *argv[]) {
     start2 = omp_get_wtime(); 
     
     for (r=0; r<reps; r++){ 
-        isArrayInitialized =false;                  // we need to initialize the 
-                                                    // array with the local sets
-                                                    // in every new repetition
         runloop(2);
     } 
     
@@ -94,7 +87,7 @@ void init2(void){
 void runloop(int loopid)  
 {
     
-#pragma omp parallel default(none) shared(loopid,isArrayAlocated,isArrayInitialized,array) 
+#pragma omp parallel default(none) shared(loopid,isArrayAlocated,array) 
     {
         int myid  = omp_get_thread_num();
         int nthreads = omp_get_num_threads(); 
