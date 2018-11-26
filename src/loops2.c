@@ -87,7 +87,7 @@ void init2(void){
 void runloop(int loopid)  
 {
     
-#pragma omp parallel default(none) shared(loopid,isArrayAlocated,array) 
+#pragma omp parallel default(none) shared(loopid,isArrayAlocated,allocationLock,array) 
     {
         int myid  = omp_get_thread_num();
         int nthreads = omp_get_num_threads(); 

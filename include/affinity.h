@@ -34,9 +34,9 @@ bool isArrayAlocated;           // This variable is a shared between threads.
                                 // The thread that acquires the allocation lock first
                                 // is responsible to allocate the array with the localSet.
 
-omp_lock_t allocationLock;      // Every thread try to initialize the array with 
+omp_lock_t allocationLock;      // Every thread try to allocate the array with 
                                 // the localSets but only the first that acquires
-                                // the lock is doing the initialization.
+                                // the lock is doing the allocation.
 
 
 /**
